@@ -1,0 +1,32 @@
+name: Lint
+
+on:
+  push:
+    paths-ignore:
+      - ".github/**"
+      - "*.md"
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Format codebase
+        uses: JohnnyMorganz/stylua-action@1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --config-path=.stylua.toml lua/
+
+      - name: Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -z $(git status -s) ]]; then
+            git commit -am "chore: format codebase" lua/*
+          fi
+          git push
