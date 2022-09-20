@@ -25,8 +25,8 @@ jobs:
       - name: Push changes
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ -z $(git status -s) ]]; then
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! [[ -z $(git status -s) ]]; then
             git commit -am "chore: format codebase" lua/*
+            git push
           fi
-          git push
