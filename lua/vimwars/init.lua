@@ -5,7 +5,7 @@ local M = {}
 
 function M.init()
     log.info("--------- Vimwars Initialized ---------")
-    dash.new()
+    dash.open()
 end
 
 return M
