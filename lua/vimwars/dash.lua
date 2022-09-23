@@ -42,7 +42,7 @@ local vcfg = {
 local M = {}
 
 function M.new()
-    view.new(vcfg)
+    return view.new(vcfg)
 end
 
 return M

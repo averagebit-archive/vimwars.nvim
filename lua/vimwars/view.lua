@@ -1,4 +1,5 @@
 local vim = vim
+local log = require("vimwars.log")
 
 local state = {
     line = 0,
