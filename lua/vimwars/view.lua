@@ -1,12 +1,7 @@
 local vim = vim
 local log = require("vimwars.log")
 
-local state = {
-    line = 0,
-    buf = nil,
-    win = nil,
-    win_width = 0,
-}
+local state = {}
 
 local view = {}
 
@@ -20,8 +15,9 @@ function view.highlight(highlight, end_ln)
 end
 
 function view.center(line)
+    local win_width = vim.api.nvim_win_get_width(state.win)
     local line_width = vim.fn.strdisplaywidth(line)
-    local spaces = math.min((state.win_width - line_width) / 2)
+    local spaces = math.min((win_width - line_width) / 2)
     return string.rep(" ", spaces) .. line
 end
 
@@ -87,30 +83,66 @@ end
 
 function element.button(el)
     -- TODO: Add buffer keybinds
-    -- TODO: Save cursor jump points in state
     local lines, highlights = element.text(el)
+    local col = #view.center(el.text) - vim.fn.strdisplaywidth(el.text)
+    local row = state.line
+
+    if el.opts.margin_bottom then
+        row = state.line - el.opts.margin_bottom
+    end
+
+    table.insert(state.cursor_jumps, { row, col })
     return lines, highlights
 end
 
 local M = {}
 
--- @param cfg
+function M.cursor_prev()
+    local prev_cursor_pos = state.cursor_pos - 1
+    if prev_cursor_pos == 0 then
+        return
+    end
+    vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[prev_cursor_pos])
+    state.cursor_pos = prev_cursor_pos
+end
+
+function M.cursor_next()
+    local next_cursor_pos = state.cursor_pos + 1
+    if next_cursor_pos > #state.cursor_jumps then
+        return
+    end
+    vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[next_cursor_pos])
+    state.cursor_pos = next_cursor_pos
+end
+
 function M.new(cfg)
+    log.info("vimwars.view.new()")
     local win = vim.api.nvim_get_current_win()
     local buf = vim.api.nvim_create_buf(false, true)
 
-    local function draw()
+    function M.draw()
+        log.info("vimwars.view.draw()")
         state = {
             line = 0,
             buf = buf,
             win = win,
             win_width = vim.api.nvim_win_get_width(win),
+            cursor_jumps = {},
         }
+
+        if cfg.vim_opts then
+            for k, v in pairs(cfg.vim_opts) do
+                vim.opt_local[k] = v
+            end
+        end
+
+        if cfg.width then
+            vim.api.nvim_win_set_width(state.win, cfg.width)
+            state.win_width = vim.api.nvim_win_get_width(state.win)
+        end
 
         vim.api.nvim_win_set_buf(state.win, state.buf)
         vim.api.nvim_buf_set_option(state.buf, "modifiable", true)
-
-        vim.cmd([[ setlocal nonumber norelativenumber ]])
 
         local text, highlights = {}, {}
         for _, el in pairs(cfg.elements) do
@@ -125,24 +157,40 @@ function M.new(cfg)
         end
 
         vim.api.nvim_buf_set_option(state.buf, "modifiable", false)
+
+        if cfg.cursor_constrain and #state.cursor_jumps > 0 then
+            state.cursor_pos = 1
+            vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[1])
+            vim.api.nvim_buf_set_keymap(
+                state.buf,
+                "n",
+                "k",
+                "<cmd>lua require('vimwars.view').cursor_prev()<CR>",
+                { noremap = false, silent = true }
+            )
+
+            vim.api.nvim_buf_set_keymap(
+                state.buf,
+                "n",
+                "j",
+                "<cmd>lua require('vimwars.view').cursor_next()<CR>",
+                { noremap = false, silent = true }
+            )
+        end
     end
 
-    draw()
-
-    local augroup_name
-    if cfg.name then
-        augroup_name = "VimwarsView" .. cfg.name
-    else
-        augroup_name = "VimwarsView" .. os.time()
+    -- https://vimhelp.org/autocmd.txt.html#%7Bevent%7D
+    local augroup = vim.api.nvim_create_augroup("VimwarsView", { clear = true })
+    if cfg.resize then
+        vim.api.nvim_create_autocmd({ "VimResized" }, {
+            group = augroup,
+            callback = function()
+                M.draw()
+            end,
+        })
     end
 
-    local augroup = vim.api.nvim_create_augroup(augroup_name, { clear = true })
-    vim.api.nvim_create_autocmd({ "VimResized" }, {
-        group = augroup,
-        callback = function()
-            draw()
-        end,
-    })
+    M.draw()
 
     return state
 end
