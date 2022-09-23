@@ -78,7 +78,7 @@ local M = {}
 
 function M.open()
     log.info("vimwars.dash.open()")
-    view.new(vcfg)
+    return view.new(vcfg)
 end
 
 return M
