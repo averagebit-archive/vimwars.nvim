@@ -6,7 +6,7 @@ local game = require("vimwars.game")
 function openGame(buf)
     log.info("this is working")
     api.nvim_buf_delete(buf, {})
-    local state = game.open()
+    game.open()
 end
 
 local vcfg = {

@@ -100,6 +100,8 @@ local M = {}
 
 function M.click()
     log.info(state.cursor_pos)
+    log.info(state.cursor[1].action)
+    state.cursor[1].action(state.buf)
 end
 
 function M.cursor_prev()
@@ -182,9 +184,9 @@ function M.new(cfg)
                 { noremap = false, silent = true }
             )
 
-            local trigger = ':lua require"vimwars.view".click()<cr>'
+            local trigger = ':lua require"vimwars.view".click()<CR>'
 
-            vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Enter>', trigger, {
+            vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Space>', trigger, {
                 nowait = true, noremap = false, silent = true
             })
         end
