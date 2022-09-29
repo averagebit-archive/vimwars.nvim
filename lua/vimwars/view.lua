@@ -91,27 +91,32 @@ function element.button(el)
         row = state.line - el.opts.margin_bottom
     end
 
-    table.insert(state.cursor_jumps, { row, col })
+    table.insert(state.cursor, { position = { row, col }, action = el.action })
+    log.info(state.cursor[1])
     return lines, highlights
 end
 
 local M = {}
+
+function M.click()
+    log.info(state.cursor_pos)
+end
 
 function M.cursor_prev()
     local prev_cursor_pos = state.cursor_pos - 1
     if prev_cursor_pos == 0 then
         return
     end
-    vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[prev_cursor_pos])
+    vim.api.nvim_win_set_cursor(state.win, state.cursor[prev_cursor_pos].position)
     state.cursor_pos = prev_cursor_pos
 end
 
 function M.cursor_next()
     local next_cursor_pos = state.cursor_pos + 1
-    if next_cursor_pos > #state.cursor_jumps then
+    if next_cursor_pos > #state.cursor then
         return
     end
-    vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[next_cursor_pos])
+    vim.api.nvim_win_set_cursor(state.win, state.cursor[next_cursor_pos].position)
     state.cursor_pos = next_cursor_pos
 end
 
@@ -127,7 +132,7 @@ function M.new(cfg)
             buf = buf,
             win = win,
             win_width = vim.api.nvim_win_get_width(win),
-            cursor_jumps = {},
+            cursor = {},
         }
 
         if cfg.vim_opts then
@@ -158,9 +163,9 @@ function M.new(cfg)
 
         vim.api.nvim_buf_set_option(state.buf, "modifiable", false)
 
-        if cfg.cursor_constrain and #state.cursor_jumps > 0 then
+        if cfg.cursor_constrain and #state.cursor > 0 then
             state.cursor_pos = 1
-            vim.api.nvim_win_set_cursor(state.win, state.cursor_jumps[1])
+            vim.api.nvim_win_set_cursor(state.win, state.cursor[1].position)
             vim.api.nvim_buf_set_keymap(
                 state.buf,
                 "n",
@@ -176,6 +181,12 @@ function M.new(cfg)
                 "<cmd>lua require('vimwars.view').cursor_next()<CR>",
                 { noremap = false, silent = true }
             )
+
+            local trigger = ':lua require"vimwars.view".click()<cr>'
+
+            vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Enter>', trigger, {
+                nowait = true, noremap = false, silent = true
+            })
         end
     end
 
@@ -191,6 +202,10 @@ function M.new(cfg)
     end
 
     M.draw()
+
+    vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Enter>', '', {
+        nowait = true, noremap = false, silent = true
+    })
 
     return state
 end

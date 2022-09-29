@@ -1,5 +1,13 @@
+local api = vim.api
 local log = require("vimwars.log")
 local view = require("vimwars.view")
+local game = require("vimwars.game")
+
+function openGame(buf)
+    log.info("this is working")
+    api.nvim_buf_delete(buf, {})
+    local state = game.open()
+end
 
 local vcfg = {
     name = "Dashboard",
@@ -33,6 +41,7 @@ local vcfg = {
                 highlight = "Normal",
                 margin_bottom = 1,
             },
+            action = openGame
         },
         {
             type = "button",
@@ -42,6 +51,7 @@ local vcfg = {
                 highlight = "Normal",
                 margin_bottom = 1,
             },
+            action = openGame
         },
         {
             type = "text",
@@ -78,7 +88,8 @@ local M = {}
 
 function M.open()
     log.info("vimwars.dash.open()")
-    return view.new(vcfg)
+    local state = view.new(vcfg)
+    return state
 end
 
 return M
