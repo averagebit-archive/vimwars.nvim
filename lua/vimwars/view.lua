@@ -1,9 +1,6 @@
 local vim = vim
-local log = require("vimwars.log")
 
-local state = {}
-
-local view = {}
+local state, view, element = {}, {}, {}
 
 function view.highlight(highlight, end_ln)
     local highlights = {}
@@ -35,14 +32,12 @@ function view.margin(text, top, bottom)
     return text
 end
 
-local element = {}
-
 function element.text(el)
     local lines, highlights = {}, {}
     local end_ln = state.line
 
     if type(el.text) == "table" then
-        if el.opts.position == "center" then
+        if el.opts and el.opts.position == "center" then
             for _, ln in pairs(el.text) do
                 table.insert(lines, view.center(ln))
             end
@@ -51,29 +46,30 @@ function element.text(el)
                 table.insert(lines, ln)
             end
         end
-        end_ln = state.line + #el.text
+        end_ln = end_ln + #el.text
     end
 
     if type(el.text) == "string" then
-        if el.opts.position == "center" then
+        if el.opts and el.opts.position == "center" then
             table.insert(lines, view.center(el.text))
         else
             table.insert(lines, el.text)
         end
-        end_ln = state.line + 1
+
+        end_ln = end_ln + 1
     end
 
-    if el.opts.margin_top then
+    if el.opts and el.opts.margin_top then
         lines = view.margin(lines, el.opts.margin_top)
         end_ln = end_ln + el.opts.margin_top
     end
 
-    if el.opts.margin_bottom then
+    if el.opts and el.opts.margin_bottom then
         lines = view.margin(lines, 0, el.opts.margin_bottom)
         end_ln = end_ln + el.opts.margin_bottom
     end
 
-    if el.opts.highlight then
+    if el.opts and el.opts.highlight then
         highlights = view.highlight(el.opts.highlight, end_ln)
     end
 
@@ -82,12 +78,11 @@ function element.text(el)
 end
 
 function element.button(el)
-    -- TODO: Add buffer keybinds
     local lines, highlights = element.text(el)
     local col = #view.center(el.text) - vim.fn.strdisplaywidth(el.text)
     local row = state.line
 
-    if el.opts.margin_bottom then
+    if el.opts and el.opts.margin_bottom then
         row = state.line - el.opts.margin_bottom
     end
 
@@ -132,18 +127,18 @@ function M.cursor_next()
 end
 
 function M.new(cfg)
-    log.info("vimwars.view.new()")
     local win = vim.api.nvim_get_current_win()
     local buf = vim.api.nvim_create_buf(false, true)
 
-    function M.draw()
-        log.info("vimwars.view.draw()")
+    local function draw()
         state = {
             line = 0,
             buf = buf,
             win = win,
             win_width = vim.api.nvim_win_get_width(win),
-            cursor = {},
+            cursor = {
+                jumps = {},
+            },
         }
 
         if cfg.vim_opts then
@@ -152,7 +147,7 @@ function M.new(cfg)
             end
         end
 
-        if cfg.width then
+        if cfg.opts and cfg.opts.width then
             vim.api.nvim_win_set_width(state.win, cfg.width)
             state.win_width = vim.api.nvim_win_get_width(state.win)
         end
@@ -205,20 +200,16 @@ function M.new(cfg)
 
     -- https://vimhelp.org/autocmd.txt.html#%7Bevent%7D
     local augroup = vim.api.nvim_create_augroup("VimwarsView", { clear = true })
-    if cfg.resize then
+    if cfg.opts and cfg.opts.resize then
         vim.api.nvim_create_autocmd({ "VimResized" }, {
             group = augroup,
             callback = function()
-                M.draw()
+                draw()
             end,
         })
     end
 
-    M.draw()
-
-    vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Enter>', '', {
-        nowait = true, noremap = false, silent = true
-    })
+    draw()
 
     return state
 end
