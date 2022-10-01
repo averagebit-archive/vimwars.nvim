@@ -91,6 +91,11 @@ function element.button(el)
         row = state.line - el.opts.margin_bottom
     end
 
+    if el.opts and el.opts.keybind then
+        local k = el.opts.keybind
+        vim.api.nvim_buf_set_keymap(state.buf, k.mode, k.lhs, k.rhs, k.opts)
+    end
+
     local pos, action = { row, col }, el.callback or nil
     table.insert(state.cursor.jumps, { pos = pos, action = action })
     return lines, highlights
