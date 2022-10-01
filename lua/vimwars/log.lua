@@ -9,13 +9,13 @@
 -- User configuration section
 local default_config = {
     -- Name of the plugin. Prepended to log messages
-    plugin = "vimwars.nvim",
+    plugin = vim.g["vimwars_log_plugin"] or "vimwars.nvim",
 
     -- Should print the output to neovim while running
     use_console = vim.g["vimwars_log_console"] or false,
 
     -- Should highlighting be used in console (using echohl)
-    highlights = true,
+    highlights = vim.g["vimwars_log_highlight"] or true,
 
     -- Should write to a file
     use_file = vim.g["vimwars_log_file"] or false,
@@ -24,7 +24,7 @@ local default_config = {
     level = vim.g["vimwars_log_level"] or "trace",
 
     -- Level configuration
-    modes = {
+    modes = vim.g["vimwars_log_modes"] or {
         { name = "trace", hl = "Comment" },
         { name = "debug", hl = "Comment" },
         { name = "info", hl = "None" },
@@ -34,7 +34,7 @@ local default_config = {
     },
 
     -- Can limit the number of decimals displayed for floats
-    float_precision = 0.01,
+    float_precision = vim.g["vimwars_log_float_precison"] or 0.01,
 }
 
 -- {{{ NO NEED TO CHANGE
