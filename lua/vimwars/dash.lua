@@ -1,20 +1,17 @@
-local api = vim.api
 local log = require("vimwars.log")
 local view = require("vimwars.view")
-local game = require("vimwars.game")
+local war = require("vimwars.war")
+local intro = require("vimwars.intro")
 
-function openGame(buf)
-    log.info("this is working")
-    api.nvim_buf_delete(buf, {})
-    game.open()
-end
-
-local vcfg = {
-    name = "Dashboard",
-    -- Whether to redraw the view on resize
-    resize = true,
-    -- Whether to constrain the cursor to jumps between buttons
-    cursor_constrain = true,
+local cfg = {
+    opts = {
+        -- Redraw the view on resize (default: true)
+        resize = true,
+        -- Constrain the cursor to buttons (default: true)
+        cursor_constrain = true,
+        -- Modifiable buffer option - overrides vim_opts.modifiable (default: true)
+        modifiable = false,
+    },
     -- Table of elements to be drawn
     elements = {
         {
@@ -35,23 +32,35 @@ local vcfg = {
         },
         {
             type = "button",
-            text = " Begin Wars",
+            text = "Begin Wars",
+            callback = war.open,
             opts = {
+                keybind = {
+                    mode = "n",
+                    lhs = "w",
+                    rhs = "<cmd>lua require('vimwars.game').start()<CR>",
+                    opts = { noremap = true, silent = true, nowait = true },
+                },
                 position = "center",
                 highlight = "Normal",
                 margin_bottom = 1,
             },
-            action = openGame
         },
         {
             type = "button",
-            text = " End Wars",
+            text = "Introduction",
+            callback = intro.open,
             opts = {
+                keybind = {
+                    mode = "n",
+                    lhs = "i",
+                    rhs = "<cmd>lua require('vimwars.intro').start()<CR>",
+                    opts = { noremap = true, silent = true, nowait = true },
+                },
                 position = "center",
                 highlight = "Normal",
                 margin_bottom = 1,
             },
-            action = openGame
         },
         {
             type = "text",
@@ -87,9 +96,8 @@ local vcfg = {
 local M = {}
 
 function M.open()
-    log.info("vimwars.dash.open()")
-    local state = view.new(vcfg)
-    return state
+    log.trace("------------- dash.open() -------------")
+    view.new(cfg)
 end
 
 return M
