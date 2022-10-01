@@ -91,35 +91,39 @@ function element.button(el)
         row = state.line - el.opts.margin_bottom
     end
 
-    table.insert(state.cursor, { position = { row, col }, action = el.action })
-    log.info(state.cursor[1])
+    local pos, action = { row, col }, el.callback or nil
+    table.insert(state.cursor.jumps, { pos = pos, action = action })
     return lines, highlights
 end
 
 local M = {}
 
-function M.click()
-    log.info(state.cursor_pos)
-    log.info(state.cursor[1].action)
-    state.cursor[1].action(state.buf)
+function M.press()
+    if state.cursor.action then
+        state.cursor.action()
+    end
 end
 
 function M.cursor_prev()
-    local prev_cursor_pos = state.cursor_pos - 1
-    if prev_cursor_pos == 0 then
+    local i = state.cursor.index - 1
+    if i < 1 then
         return
     end
-    vim.api.nvim_win_set_cursor(state.win, state.cursor[prev_cursor_pos].position)
-    state.cursor_pos = prev_cursor_pos
+    state.cursor.index = i
+    state.cursor.pos = state.cursor.jumps[i].pos
+    state.cursor.action = state.cursor.jumps[i].action
+    vim.api.nvim_win_set_cursor(state.win, state.cursor.pos)
 end
 
 function M.cursor_next()
-    local next_cursor_pos = state.cursor_pos + 1
-    if next_cursor_pos > #state.cursor then
+    local i = state.cursor.index + 1
+    if i > #state.cursor.jumps then
         return
     end
-    vim.api.nvim_win_set_cursor(state.win, state.cursor[next_cursor_pos].position)
-    state.cursor_pos = next_cursor_pos
+    state.cursor.index = i
+    state.cursor.pos = state.cursor.jumps[i].pos
+    state.cursor.action = state.cursor.jumps[i].action
+    vim.api.nvim_win_set_cursor(state.win, state.cursor.pos)
 end
 
 function M.new(cfg)
@@ -163,32 +167,34 @@ function M.new(cfg)
             vim.api.nvim_buf_add_highlight(hl[1], hl[2], hl[3], hl[4], hl[5], hl[6])
         end
 
-        vim.api.nvim_buf_set_option(state.buf, "modifiable", false)
+        if cfg.opts and cfg.opts.modifiable == false then
+            vim.api.nvim_buf_set_option(state.buf, "modifiable", false)
+        end
 
-        if cfg.cursor_constrain and #state.cursor > 0 then
-            state.cursor_pos = 1
-            vim.api.nvim_win_set_cursor(state.win, state.cursor[1].position)
-            vim.api.nvim_buf_set_keymap(
-                state.buf,
-                "n",
-                "k",
-                "<cmd>lua require('vimwars.view').cursor_prev()<CR>",
-                { noremap = false, silent = true }
-            )
+        if cfg.opts and cfg.opts.cursor_constrain and #state.cursor.jumps > 0 then
+            state.cursor.index = 1
+            state.cursor.pos = state.cursor.jumps[1].pos
+            state.cursor.action = state.cursor.jumps[1].action
 
-            vim.api.nvim_buf_set_keymap(
-                state.buf,
-                "n",
-                "j",
-                "<cmd>lua require('vimwars.view').cursor_next()<CR>",
-                { noremap = false, silent = true }
-            )
+            vim.api.nvim_win_set_cursor(state.win, state.cursor.pos)
 
-            local trigger = ':lua require"vimwars.view".click()<CR>'
+            local k = {
+                buf = state.buf,
+                mode = "n",
+                lhs = nil,
+                rhs = nil,
+                opts = { noremap = true, silent = true, nowait = true },
+            }
 
-            vim.api.nvim_buf_set_keymap(state.buf, 'n', '<Space>', trigger, {
-                nowait = true, noremap = false, silent = true
-            })
+            -- TODO: use CursorMoved autocmd event to handle this
+            k.lhs, k.rhs = "k", "<cmd>lua require('vimwars.view').cursor_prev()<CR>"
+            vim.api.nvim_buf_set_keymap(k.buf, k.mode, k.lhs, k.rhs, k.opts)
+
+            k.lhs, k.rhs = "j", "<cmd>lua require('vimwars.view').cursor_next()<CR>"
+            vim.api.nvim_buf_set_keymap(k.buf, k.mode, k.lhs, k.rhs, k.opts)
+
+            k.lhs, k.rhs = "<CR>", "<cmd>lua require('vimwars.view').press()<CR>"
+            vim.api.nvim_buf_set_keymap(k.buf, k.mode, k.lhs, k.rhs, k.opts)
         end
     end
 
