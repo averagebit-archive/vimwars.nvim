@@ -32,13 +32,13 @@ local cfg = {
         },
         {
             type = "button",
-            text = "Begin Wars",
-            callback = war.open,
+            text = "[w] Begin Wars",
+            callback = war.start,
             opts = {
                 keybind = {
                     mode = "n",
                     lhs = "w",
-                    rhs = "<cmd>lua require('vimwars.game').start()<CR>",
+                    rhs = "<cmd>lua require('vimwars.war').start()<CR>",
                     opts = { noremap = true, silent = true, nowait = true },
                 },
                 position = "center",
@@ -48,12 +48,12 @@ local cfg = {
         },
         {
             type = "button",
-            text = "Introduction",
-            callback = intro.open,
+            text = "[W] Introduction",
+            callback = intro.start,
             opts = {
                 keybind = {
                     mode = "n",
-                    lhs = "i",
+                    lhs = "W",
                     rhs = "<cmd>lua require('vimwars.intro').start()<CR>",
                     opts = { noremap = true, silent = true, nowait = true },
                 },

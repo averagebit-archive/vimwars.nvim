@@ -2,7 +2,7 @@ local log = require("vimwars.log")
 
 local M = {}
 
-function M.open()
+function M.start()
     log.trace("intro.open()")
 end
 

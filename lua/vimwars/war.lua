@@ -11,7 +11,7 @@ local state = {
 
 local M = {}
 
-function M.open()
+function M.start()
     log.trace("game.open()")
 
     state.war = state.wars[1]
