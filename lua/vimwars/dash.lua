@@ -1,28 +1,103 @@
 local log = require("vimwars.log")
-local layout = require("vimwars.layout")
+local view = require("vimwars.view")
+local war = require("vimwars.war")
+local intro = require("vimwars.intro")
 
-local header = layout.text({
-	[[ __    __ __   __    __   __     __   ______   ______   ______   ]],
-	[[/\ \  / //\ \ /\ "-./  \ /\ \  _ \ \ /\  __ \ /\  == \ /\  ___\  ]],
-	[[\ \ \/ / \ \ \\ \ \-./\ \\ \ \/ ".\ \\ \  __ \\ \  __< \ \___  \ ]],
-	[[ \ \__/   \ \_\\ \_\ \ \_\\ \__/".~\_\\ \_\ \_\\ \_\ \_\\/\_____\]],
-	[[  \/_/     \/_/ \/_/  \/_/ \/_/   \/_/ \/_/\/_/ \/_/ /_/ \/_____/]],
-}, { position = "center", highlight = "String", margin_top = 2, margin_bottom = 2 })
-
-local elements = {
-	header,
-	layout.button("  Begin wars", nil, { position = "center", margin_bottom = 1 }),
-	layout.text("github.com/vimwars", { position = "center", highlight = "Type" }),
+local cfg = {
+    opts = {
+        -- Redraw the view on resize (default: true)
+        resize = true,
+        -- Constrain the cursor to buttons (default: true)
+        cursor_constrain = true,
+        -- Modifiable buffer option - overrides vim_opts.modifiable (default: true)
+        modifiable = false,
+    },
+    -- Table of elements to be drawn
+    elements = {
+        {
+            type = "text",
+            text = {
+                [[ __    __ __   __    __   __     __   ______   ______   ______   ]],
+                [[/\ \  / //\ \ /\ "-./  \ /\ \  _ \ \ /\  __ \ /\  == \ /\  ___\  ]],
+                [[\ \ \/ / \ \ \\ \ \-./\ \\ \ \/ ".\ \\ \  __ \\ \  __< \ \___  \ ]],
+                [[ \ \__/   \ \_\\ \_\ \ \_\\ \__/".~\_\\ \_\ \_\\ \_\ \_\\/\_____\]],
+                [[  \/_/     \/_/ \/_/  \/_/ \/_/   \/_/ \/_/\/_/ \/_/ /_/ \/_____/]],
+            },
+            opts = {
+                position = "center",
+                highlight = "String",
+                margin_top = 2,
+                margin_bottom = 2,
+            },
+        },
+        {
+            type = "button",
+            text = "[w] Begin Wars",
+            callback = war.start,
+            opts = {
+                keybind = {
+                    mode = "n",
+                    lhs = "w",
+                    rhs = "<cmd>lua require('vimwars.war').start()<CR>",
+                    opts = { noremap = true, silent = true, nowait = true },
+                },
+                position = "center",
+                highlight = "Normal",
+                margin_bottom = 1,
+            },
+        },
+        {
+            type = "button",
+            text = "[W] Introduction",
+            callback = intro.start,
+            opts = {
+                keybind = {
+                    mode = "n",
+                    lhs = "W",
+                    rhs = "<cmd>lua require('vimwars.intro').start()<CR>",
+                    opts = { noremap = true, silent = true, nowait = true },
+                },
+                position = "center",
+                highlight = "Normal",
+                margin_bottom = 1,
+            },
+        },
+        {
+            type = "text",
+            text = "github.com/vimwars",
+            opts = {
+                position = "center",
+                highlight = "Type",
+            },
+        },
+    },
+    -- Vim options set via vim.opt_local
+    -- https://neovim.io/doc/user/quickref.html#option-list
+    vim_opts = {
+        colorcolumn = "",
+        cursorcolumn = false,
+        cursorline = false,
+        foldlevel = 100,
+        list = false,
+        number = false,
+        relativenumber = false,
+        signcolumn = "no",
+        spell = false,
+        wrap = false,
+        bufhidden = "wipe",
+        buflisted = false,
+        buftype = "nofile",
+        filetype = "",
+        matchpairs = "",
+        swapfile = false,
+    },
 }
 
 local M = {}
 
 function M.open()
-	log.info("vimwars.dash_open")
-	local win = vim.api.nvim_get_current_win()
-	local buf = vim.api.nvim_create_buf(false, true)
-	local cfg = layout.cfg(win, buf, elements)
-	layout.draw(cfg)
+    log.trace("------------- dash.open() -------------")
+    view.new(cfg)
 end
 
 return M
